@@ -1,0 +1,8 @@
+{
+  "newCommonUserRegister": {
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "randomEmail",
+    "password": "test123"
+  }
+}
