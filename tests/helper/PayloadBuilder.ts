@@ -3,7 +3,7 @@ import path from 'node:path';
 
 export class PayLoadBuilder {
 
-    static getTemplate(templateKeyName: string, fileName?:string): any {
+    static getTemplate(templateKeyName: string, fileName?: string): any {
         const actualFilePath = path.join(process.cwd(), 'tests/testData', fileName ? fileName : 'testData.json');
         const data = JSON.parse(fs.readFileSync(actualFilePath, 'utf-8'));
         if (!data[templateKeyName]) throw new Error(`Payload key "${templateKeyName}" not found in ${fileName || 'testData.json'}`);
@@ -26,9 +26,9 @@ export class PayLoadBuilder {
         return payload;
     }
 
-     private static resolveDynamicTags(obj: any): any {
+    private static resolveDynamicTags(obj: any): any {
         const timestamp = Date.now();
-        
+
         // Loop through the object to find and replace tags
         for (const key in obj) {
             if (typeof obj[key] === 'string') {
@@ -42,6 +42,4 @@ export class PayLoadBuilder {
         }
         return obj;
     }
-
-
 }

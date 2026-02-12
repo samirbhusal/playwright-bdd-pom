@@ -4,5 +4,9 @@
     "lastName": "User",
     "email": "randomEmail",
     "password": "test123"
+  },
+  "existingCommonUser": {
+    "email": "tes@test.com",
+    "password": "test123"
   }
 }

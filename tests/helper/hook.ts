@@ -1,14 +1,22 @@
 // tests/helper/hook.ts
 import { Before, After } from '@cucumber/cucumber';
-import { request } from '@playwright/test';
 
 Before(async function () {
-    // This creates an API context using the baseURL and headers from the config
-    this.apiContext = await request.newContext({
-        baseURL: 'https://thinking-tester-contact-list.herokuapp.com'
-    });
+
 });
 
 After(async function () {
-    await this.apiContext.dispose();
+    // 1. Close the Page and Browser gracefully
+    if (this.page) {
+        const browser = this.page.context().browser();
+        await this.page.close();
+        if (browser) {
+            await browser.close(); // This is the "Kill Switch"
+        }
+    }
+
+    // 2. Dispose of API Contexts
+    if (this.apiContext) {
+        await this.apiContext.dispose();
+    }
 });

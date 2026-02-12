@@ -1,10 +1,20 @@
-import { defineStep as step } from "@cucumber/cucumber";
-import { expect } from "@playwright/test";
+import { defineStep as step } from '@cucumber/cucumber';
+import { DriverFactory } from '../helper/DriverFactory.js';
+import { ConfigLoader } from '../helper/ConfigLoader.js';
 
+step('API and Web platforms is launched from Web', async function () {
+    this.apiContext = await DriverFactory.launchApi();
+    this.page = await DriverFactory.launchWeb();
+});
 
-step("the response code should be {int}", async function(expectedStatus: number) {
-    const actualStatusCode = this.response.status();
-    console.log(`Actual Status Code: ${actualStatusCode}` + `, response: ${this.response}` );
+step('Web platform is launched', async function () {
+    this.page = await DriverFactory.launchWeb();
+});
 
-    expect(actualStatusCode, `Expected status ${expectedStatus} but got ${actualStatusCode}`).toBe(expectedStatus);
-})
+step('API environment is set up', async function () {
+
+    // If not already launched by a previous step, launch it now
+    if (!this.apiContext) {
+        this.apiContext = await DriverFactory.launchApi();
+    }
+});

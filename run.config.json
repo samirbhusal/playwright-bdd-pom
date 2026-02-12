@@ -1,0 +1,5 @@
+{
+  "platform": "api",
+  "env": "qa",
+  "headless": false
+}

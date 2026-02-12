@@ -1,4 +1,4 @@
-import {APIRequestContext} from "@playwright/test";
+import { APIRequestContext } from "@playwright/test";
 
 export class AuthAPI {
 
@@ -9,16 +9,16 @@ export class AuthAPI {
     }
 
     async login(payload: object) {
-        return await this.apiRequestContext.post('/users/login', {data: payload})
+        return await this.apiRequestContext.post('/users/login', { data: payload })
     }
 
     async addUser(payload: object) {
-        return await this.apiRequestContext.post('/users', {data: payload})
+        return await this.apiRequestContext.post('/users', { data: payload })
     }
 
     async getContacts(token: string) {
-        return await this.apiRequestContext.get('/contacts',  {
-            headers: { 'Authorization': `Bearer ${token}`}
+        return await this.apiRequestContext.get('/contacts', {
+            headers: { 'Authorization': `Bearer ${token}` }
         })
     }
 
