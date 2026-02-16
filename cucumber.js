@@ -1,4 +1,4 @@
-const formatters = ["progress"];
+const formatters = ["progress", "html:reports/cucumber-report.html"];
 try {
   require.resolve("allure-cucumberjs/reporter");
   formatters.push("allure-cucumberjs/reporter");

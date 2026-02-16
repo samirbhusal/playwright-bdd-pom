@@ -1,5 +1,7 @@
 // tests/helper/hook.ts
 import { Before, After, AfterAll, setWorldConstructor } from '@cucumber/cucumber';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
 import { DriverFactory } from './DriverFactory';
 import { CustomWorld } from './customWorld';
 
@@ -28,7 +30,28 @@ Before(async function () {
     // Contexts are intentionally launched by explicit steps.
 });
 
-After({ timeout: 20000 }, async function () {
+function isFailedStatus(status: unknown): boolean {
+    return status === 'FAILED' || status === 6;
+}
+
+After({ timeout: 20000 }, async function (scenario) {
+    if (this.page && !this.page.isClosed() && isFailedStatus(scenario.result?.status)) {
+        try {
+            const screenshot = await this.page.screenshot({ fullPage: true });
+            const safeName = scenario.pickle.name.replace(/[^a-zA-Z0-9-_]+/g, '_').slice(0, 80);
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const screenshotDir = path.join(process.cwd(), 'reports', 'screenshots');
+            const screenshotPath = path.join(screenshotDir, `${timestamp}-${safeName}.png`);
+
+            await fs.mkdir(screenshotDir, { recursive: true });
+            await fs.writeFile(screenshotPath, screenshot);
+            await this.attach(screenshot, 'image/png');
+            await this.attach(`Saved screenshot: ${screenshotPath}`, 'text/plain');
+        } catch (error: any) {
+            console.warn(`Failed to capture screenshot: ${error?.message ?? String(error)}`);
+        }
+    }
+
     // Close the Page and Browser gracefully
     if (this.page) {
         if (!this.page.isClosed()) {
