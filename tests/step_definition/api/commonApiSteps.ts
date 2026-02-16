@@ -1,6 +1,6 @@
 import { defineStep as step } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
-import { ConfigLoader } from "helper/ConfigLoader.js";
+import { ConfigLoader } from "../../helper/ConfigLoader";
 
 
 step("the response code should be {int}", async function (expectedStatus: number) {
@@ -8,4 +8,3 @@ step("the response code should be {int}", async function (expectedStatus: number
 
     expect(actualStatusCode, `Expected status ${expectedStatus} but got ${actualStatusCode}`).toBe(expectedStatus);
 })
-

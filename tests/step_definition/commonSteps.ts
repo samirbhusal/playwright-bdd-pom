@@ -1,13 +1,12 @@
-import { defineStep as step } from '@cucumber/cucumber';
-import { DriverFactory } from '../helper/DriverFactory.js';
-import { ConfigLoader } from '../helper/ConfigLoader.js';
+import { defineStep as step, Given } from '@cucumber/cucumber';
+import { DriverFactory } from '../helper/DriverFactory';
 
-step('API and Web platforms is launched from Web', async function () {
+Given('API and Web platforms is launched from Web', async function () {
     this.apiContext = await DriverFactory.launchApi();
     this.page = await DriverFactory.launchWeb();
 });
 
-step('Web platform is launched', async function () {
+Given('Web platform is launched', async function () {
     this.page = await DriverFactory.launchWeb();
 });
 

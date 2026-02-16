@@ -8,7 +8,7 @@ export class RandomUtils {
         if (value.includes("randomGuid")) return uuidv4();
         if (value.includes("randomCurrentDate")) return new Date().toISOString().split('T')[0];
         if (value.includes("randomSessionId")) return `SESS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
-        
+
         return value;
     }
 
@@ -22,5 +22,18 @@ export class RandomUtils {
             }
         }
         return obj;
+    }
+
+    static async parseJsonBody(response: any): Promise<any> {
+        const raw = await response.text();
+        if (!raw || raw.trim().length === 0) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(raw);
+        } catch {
+            throw new Error(`Response is not valid JSON. Status: ${response.status()}, Body: ${raw}`);
+        }
     }
 }

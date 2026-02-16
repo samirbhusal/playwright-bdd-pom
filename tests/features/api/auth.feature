@@ -13,5 +13,20 @@ Feature: User Authentication
         Given registered user generates access token with "existingCommonUser" body
         And the response code should be 200
 
+    @TES-003
+    Scenario: Verify existing user can be logged in and generate access token
+        Given registered user generates access token with "existingCommonUser" body
+        And the response code should be 200
+
+    @TES-004
+    Scenario: Verify existing user can be logged in and generate access token
+        Given registered user generates access token with "existingCommonUser" body
+        And the response code should be 200
+
+    @TES-005
+    Scenario: Verify existing user can be logged in and generate access token
+        Given registered user generates access token with "existingCommonUser" body
+        And the response code should be 200
+
 
 

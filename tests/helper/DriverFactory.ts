@@ -1,56 +1,109 @@
-import { chromium, firefox, webkit, Page, APIRequestContext, request } from '@playwright/test';
-import { ConfigLoader } from './ConfigLoader.js';
-import { BrowserManager } from './BrowserManager.js';
+import { chromium, firefox, webkit, Page, APIRequestContext, request, Browser } from '@playwright/test';
+import { ConfigLoader } from './ConfigLoader';
+import { BrowserManager } from './BrowserManager';
 
 export class DriverFactory {
 
-    static async launchFromConfig(): Promise<Page | APIRequestContext> {
-        const platform = ConfigLoader.getPlatform().toLowerCase();
-        if (platform === 'webportal') return await this.launchWeb();
-        if (platform === 'api') return await this.launchApi();
-        throw new Error(`Unsupported platform: ${platform}`);
+    private static browser: Browser | null = null;
+    private static currentBrowserKey: string | null = null;
+
+    private static getBrowserKey(options: { name: string; channel?: string }): string {
+        return `${options.name}:${options.channel ?? 'default'}`;
     }
 
     static async launchWeb(): Promise<Page> {
 
-        const selection = BrowserManager.getRandomPlatform();
+        const selection = BrowserManager.getRandomPlatformCandidates();
+        const candidates = selection.browsers.map((browserName) => ({
+            browserName,
+            options: BrowserManager.getBrowserOptions(browserName),
+        }));
+        const firstChoice = candidates[0];
+        const isHeadless = ConfigLoader.isHeadless();
 
+        // Browser might have been closed by hooks; drop stale handle.
+        if (this.browser && !this.browser.isConnected()) {
+            this.browser = null;
+            this.currentBrowserKey = null;
+        }
 
-        const options = BrowserManager.getBrowserOptions(selection.browser);
+        const preferredBrowserKey = this.getBrowserKey(firstChoice.options);
 
-        // Select the correct Engine
-        let engine;
-        if (options.name === 'firefox') engine = firefox;
-        else if (options.name === 'webkit') engine = webkit;
-        else engine = chromium;
+        // 1. SHUFFLE LOGIC: If random first choice changed, restart engine.
+        if (this.browser && this.currentBrowserKey !== preferredBrowserKey) {
+            await this.browser.close();
+            this.browser = null;
+            this.currentBrowserKey = null;
+        }
 
-        // Launch with Headless and Channel support
-        const browser = await engine.launch({
-            headless: ConfigLoader.isHeadless(),
-            channel: options.channel,
-            args: ['--start-maximized'] // Only affects Chromium-based browsers
-        }).catch(async (error) => {
-            if (error.message.includes('not found')) {
-                console.warn(`⚠️  Channel ${options.channel} not found. Falling back to default Chromium.`);
-                // Re-launching without the specific channel
-                return await engine.launch({
-                    headless: ConfigLoader.isHeadless(),
-                    args: ['--start-maximized']
-                });
+        // 2. LAUNCH LOGIC: Only start engine if not already running.
+        let activeBrowserName = firstChoice.browserName;
+        if (!this.browser) {
+            const launchErrors: string[] = [];
+
+            for (const candidate of candidates) {
+                try {
+                    this.browser = await this.launchCandidate(candidate.options, isHeadless);
+                    this.currentBrowserKey = this.getBrowserKey(candidate.options);
+                    activeBrowserName = candidate.browserName;
+                    break;
+                } catch (error: any) {
+                    const message = error?.message ?? String(error);
+                    launchErrors.push(`${candidate.browserName}: ${message}`);
+                    console.warn(`Launch failed for ${candidate.browserName}: ${message}`);
+                }
             }
-            throw error;
-        });
 
-        // Create Context with "Null" viewport to allow true maximization
-        const context = await browser.newContext({
-            viewport: null,
-            // Optional: You can add UserAgent spoofing here if needed
+            if (!this.browser) {
+                throw new Error(`Unable to launch any browser. Attempts: ${launchErrors.join(' | ')}`);
+            }
+        }
+
+        const context = await this.browser.newContext({
+            viewport: { width: 1920, height: 1080 },
         });
 
         const page = await context.newPage();
-
-        console.log(`Web Instance Started: ${selection.browser} on ${selection.os}`);
+        console.log(`🎲 Worker using: ${activeBrowserName} | OS: ${selection.os}`);
         return page;
+    }
+
+    static async closeBrowser(): Promise<void> {
+        if (this.browser) {
+            try {
+                await this.browser.close();
+            } catch (error: any) {
+                console.warn(`Browser close failed: ${error?.message ?? String(error)}`);
+            }
+            this.browser = null;
+            this.currentBrowserKey = null;
+        }
+    }
+
+    private static async launchCandidate(
+        options: { name: string; channel?: string },
+        isHeadless: boolean
+    ): Promise<Browser> {
+        const baseLaunchOptions = {
+            headless: isHeadless,
+            args: options.name === 'chromium' && !isHeadless ? ['--start-maximized'] : []
+        };
+
+        const engine = options.name === 'firefox' ? firefox :
+            options.name === 'webkit' ? webkit : chromium;
+
+        if (options.name === 'chromium' && options.channel) {
+            try {
+                return await engine.launch({
+                    ...baseLaunchOptions,
+                    channel: options.channel,
+                });
+            } catch {
+                return await chromium.launch(baseLaunchOptions);
+            }
+        }
+
+        return await engine.launch(baseLaunchOptions);
     }
 
     static async launchApi(): Promise<APIRequestContext> {

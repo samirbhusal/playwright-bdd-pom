@@ -4,9 +4,9 @@ A robust, scalable testing framework built with Playwright, Cucumber (JS), and T
 
 # run only Web tests:
 
-'''
+```
 npx cucumber-js --tags "@web"
-'''
+```
 
 # run Smoke tests on Web:
 

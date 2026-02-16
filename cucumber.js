@@ -1,16 +1,21 @@
-// cucumber.js in the root folder
-export default {
-  // Use 'import' instead of 'require' for support code
-  import: [
-    "tests/steps/**/*.ts",
-    "tests/helper/hook.ts",
-    "tests/steps/web/*.ts", // Explicitly add the web folder
-    "tests/steps/api/*.ts",
-  ],
-  paths: ["tests/features/api/*.feature", "tests/features/web/*.feature"],
-  // Ensure we use the ESM version of the ts-node loader
-  loader: ["ts-node/esm"],
-  format: ["progress-bar", "html:reports/cucumber-report.html"],
+const formatters = ["progress"];
+try {
+  require.resolve("allure-cucumberjs/reporter");
+  formatters.push("allure-cucumberjs/reporter");
+} catch (_error) {
+  // Keep local runs working even when optional Allure reporter isn't installed.
+}
 
-  defaultTimeout: 30000,
+module.exports = {
+  default: {
+    requireModule: ["ts-node/register"],
+    require: [
+      "tests/helper/hook.ts",
+      "tests/step_definition/**/*.ts",
+    ],
+    paths: ["tests/features/**/*.feature"],
+    format: formatters,
+    publishQuiet: true,
+    defaultTimeout: 30000,
+  },
 };
